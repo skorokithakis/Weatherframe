@@ -11,6 +11,7 @@ from pathlib import Path
 import astral
 import pytz
 import requests
+from astral import sun
 from openai import OpenAI
 from PIL import Image, ImageOps
 
@@ -60,29 +61,29 @@ def get_time_of_day(timezone, lat, lon):
     city = astral.LocationInfo("City", "Country", timezone, lat, lon)
     now = datetime.datetime.now(pytz.timezone(city.timezone))
     if (
-        astral.sun.twilight(
+        sun.twilight(
             city.observer, tzinfo=city.timezone, direction=astral.SunDirection.RISING
         )[0]
         < now
-        <= astral.sun.twilight(
+        <= sun.twilight(
             city.observer, tzinfo=city.timezone, direction=astral.SunDirection.RISING
         )[1]
     ):
         return "sunrise"
     elif (
-        astral.sun.twilight(
+        sun.twilight(
             city.observer, tzinfo=city.timezone, direction=astral.SunDirection.SETTING
         )[0]
         < now
-        <= astral.sun.twilight(
+        <= sun.twilight(
             city.observer, tzinfo=city.timezone, direction=astral.SunDirection.SETTING
         )[1]
     ):
         return "sunset"
     elif (
-        astral.sun.daylight(city.observer, tzinfo=city.timezone)[0]
+        sun.daylight(city.observer, tzinfo=city.timezone)[0]
         < now
-        <= astral.sun.daylight(city.observer, tzinfo=city.timezone)[1]
+        <= sun.daylight(city.observer, tzinfo=city.timezone)[1]
     ):
         return "day"
     else:
