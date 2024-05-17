@@ -11,7 +11,6 @@ from pathlib import Path
 import astral
 import pytz
 import requests
-from astral import moon, sun
 from openai import OpenAI
 from PIL import Image, ImageOps
 
@@ -136,7 +135,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate weather-based images.")
     parser.add_argument("lat", type=float, help="Latitude of the location")
     parser.add_argument("lon", type=float, help="Longitude of the location")
-    parser.add_argument("timezone", type=str, help="Timezone of the location (e.g., Europe/Athens)")
+    parser.add_argument(
+        "timezone", type=str, help="Timezone of the location (e.g., Europe/Athens)"
+    )
 
     args = parser.parse_args()
 
