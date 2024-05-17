@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import base64
 import datetime
 import io
@@ -47,17 +48,17 @@ def generate_image(prompt):
     return base64.b64decode(response.data[0].b64_json)
 
 
-def get_weather():
+def get_weather(lat, lon):
     r = requests.get(
-        "https://api.openweathermap.org/data/3.0/onecall?lat=40.597215"
-        f"&lon=22.950262&appid={os.getenv('OPENWEATHER_API_KEY')}"
+        f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}"
+        f"&lon={lon}&appid={os.getenv('OPENWEATHER_API_KEY')}"
         "&exclude=minutely,daily,hourly,alerts&units=metric"
     )
     return r.json()
 
 
-def get_time_of_day():
-    city = astral.LocationInfo("Thessaloniki", "Greece", "Europe/Athens", 40.6, 23)
+def get_time_of_day(timezone, lat, lon):
+    city = astral.LocationInfo("City", "Country", timezone, lat, lon)
     now = datetime.datetime.now(pytz.timezone(city.timezone))
     if (
         astral.sun.twilight(
@@ -103,15 +104,15 @@ def get_moon_phase():
         return "waning"
 
 
-def main():
+def main(lat, lon, timezone):
     setting = random.choice(list(SETTINGS.keys()))
 
-    weather = get_weather()["current"]["weather"][0]
+    weather = get_weather(lat, lon)["current"]["weather"][0]
     season = ["autumn", "winter", "spring", "summer"][
         (datetime.date.today().month // 3 + 1) % 4
     ]
 
-    time_of_day = get_time_of_day()
+    time_of_day = get_time_of_day(timezone, lat, lon)
 
     filename = f"{setting}-{season}-{slugify(time_of_day)}-{weather['description'].replace(' ', '-').replace('/', '-')}.jpg"
     path = CURRENT_DIRECTORY / "image_cache" / filename
@@ -128,8 +129,15 @@ def main():
 
     image = Image.open(path)
     image = ImageOps.fit(image, (800, 480))
-    image.show()
+    image.save("/tmp/output.jpg", "JPEG")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Generate weather-based images.")
+    parser.add_argument("lat", type=float, help="Latitude of the location")
+    parser.add_argument("lon", type=float, help="Longitude of the location")
+    parser.add_argument("timezone", type=str, help="Timezone of the location (e.g., Europe/Athens)")
+
+    args = parser.parse_args()
+
+    main(args.lat, args.lon, args.timezone)

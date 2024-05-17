@@ -178,3 +178,4 @@ pyrightconfig.json
 image_cache/
 .DS_Store
 .envrc
+.aider.*
