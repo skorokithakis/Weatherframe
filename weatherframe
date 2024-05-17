@@ -59,35 +59,29 @@ def get_weather(lat, lon):
 
 def get_time_of_day(timezone, lat, lon):
     city = astral.LocationInfo("City", "Country", timezone, lat, lon)
-    now = datetime.datetime.now(pytz.timezone(city.timezone))
-    if (
-        sun.twilight(
-            city.observer, tzinfo=city.timezone, direction=astral.SunDirection.RISING
-        )[0]
-        < now
-        <= sun.twilight(
-            city.observer, tzinfo=city.timezone, direction=astral.SunDirection.RISING
-        )[1]
-    ):
+    timezone = pytz.timezone(city.timezone)
+    now = datetime.datetime.now(timezone)
+
+    rise_time = lambda depression: sun.dawn(
+        city.observer, tzinfo=city.timezone, depression=depression
+    )
+    set_time = lambda depression: sun.dusk(
+        city.observer, tzinfo=city.timezone, depression=depression
+    )
+
+    if now < rise_time(5):
+        return "night"
+    elif now < rise_time(0):
+        return "dawn"
+    elif now < rise_time(-5):
         return "sunrise"
-    elif (
-        sun.twilight(
-            city.observer, tzinfo=city.timezone, direction=astral.SunDirection.SETTING
-        )[0]
-        < now
-        <= sun.twilight(
-            city.observer, tzinfo=city.timezone, direction=astral.SunDirection.SETTING
-        )[1]
-    ):
-        return "sunset"
-    elif (
-        sun.daylight(city.observer, tzinfo=city.timezone)[0]
-        < now
-        <= sun.daylight(city.observer, tzinfo=city.timezone)[1]
-    ):
+    elif now < set_time(-5):
         return "day"
+    elif now < set_time(0):
+        return "sunset"
+    elif now < set_time(5):
+        return "twilight"
     else:
-        # We're between two days, which means night.
         return "night"
 
 
@@ -104,7 +98,7 @@ def get_moon_phase():
         return "waning"
 
 
-def main(lat, lon, timezone):
+def main(lat, lon, timezone, show):
     setting = random.choice(list(SETTINGS.keys()))
 
     weather = get_weather(lat, lon)["current"]["weather"][0]
@@ -117,7 +111,7 @@ def main(lat, lon, timezone):
     filename = f"{setting}-{season}-{slugify(time_of_day)}-{weather['description'].replace(' ', '-').replace('/', '-')}.jpg"
     path = CURRENT_DIRECTORY / "image_cache" / filename
 
-    prompt = f"A calm, relaxing painting by Albert Bierstadt, of {SETTINGS[setting]} in the {season}, at {time_of_day}, with weather: {weather['description']}"
+    prompt = f"{SETTINGS[setting]} at {time_of_day}, with {weather['description']}, in the {season}, painting by Albert Bierstadt, calm, relaxing, serene"
     print(prompt)
 
     if path.exists():
@@ -131,10 +125,16 @@ def main(lat, lon, timezone):
     image = ImageOps.fit(image, (800, 480))
     image.save("/tmp/output.jpg", "JPEG")
 
+    if show:
+        image.show()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate weather-based images.")
     parser.add_argument("lat", type=float, help="Latitude of the location")
+    parser.add_argument(
+        "--show", action="store_true", help="Show the final thumbnail after creation"
+    )
     parser.add_argument("lon", type=float, help="Longitude of the location")
     parser.add_argument(
         "timezone", type=str, help="Timezone of the location (e.g., Europe/Athens)"
@@ -142,4 +142,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.lat, args.lon, args.timezone)
+    main(args.lat, args.lon, args.timezone, args.show)
