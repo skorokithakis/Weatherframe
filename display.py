@@ -4,8 +4,9 @@ import sys
 import time
 import traceback
 
+from PIL.Image import Transpose
 from PIL import Image
-from PIL import ImageDraw, ImageOps, ImageEnhance, Transpose
+from PIL import ImageDraw, ImageOps, ImageEnhance
 from waveshare_epd import epd7in3f
 
 palette = [
@@ -47,7 +48,7 @@ palette_image.putpalette(
 )
 
 im = image.quantize(palette=palette_image, dither=Image.Dither.FLOYDSTEINBERG)
-im = im.transpose(Transpose.FLIP_TOP_BOTTOM)
+im = im.transpose(Transpose.ROTATE_180)
 
 try:
     epd = epd7in3f.EPD()
