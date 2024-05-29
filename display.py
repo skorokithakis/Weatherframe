@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import datetime
 import os
 import sys
 import time
@@ -9,6 +10,29 @@ from PIL.Image import Transpose
 from PIL import Image
 from PIL import ImageDraw, ImageOps, ImageEnhance
 from waveshare_epd import epd7in3f
+
+
+def ran_recently(seconds=90):
+    """Return whether this script ran recently."""
+    filename = "/tmp/weatherframe_last_run"
+
+    def write_date():
+        with open(filename, "w") as file:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            file.write(current_time)
+
+    if os.path.exists(filename):
+        with open(filename, "r") as file:
+            timestamp_str = file.read().strip()
+            old_time = datetime.datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+            if (datetime.datetime.now() - old_time).total_seconds() > seconds:
+                write_date()
+                return False
+            else:
+                return True
+    else:
+        write_date()
+        return False
 
 
 def display(path, brightness, method="fit"):
@@ -56,6 +80,9 @@ def display(path, brightness, method="fit"):
 
     im = image.quantize(palette=palette_image, dither=Image.Dither.FLOYDSTEINBERG)
     im = im.transpose(Transpose.ROTATE_180)
+
+    if ran_recently():
+        sys.exit("We ran too recently, quitting...")
 
     try:
         epd = epd7in3f.EPD()
